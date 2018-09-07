@@ -91,14 +91,15 @@ class MyCli(object):
     default_config_file = os.path.join(PACKAGE_ROOT, 'myclirc')
 
 
-    def __init__(self, sqlexecute=None, prompt=None,
+    def __init__(self, prompt_dsn=None, sqlexecute=None, prompt=None,
             logfile=None, defaults_suffix=None, defaults_file=None,
             login_path=None, auto_vertical_output=False, warn=None,
-            myclirc="~/.myclirc",dsn):
+            myclirc="~/.myclirc"):
         self.sqlexecute = sqlexecute
         self.logfile = logfile
         self.defaults_suffix = defaults_suffix
         self.login_path = login_path
+        self.database = prompt_dsn
 
         # self.cnf_files is a class variable that stores the list of mysql
         # config files to read in at launch.
@@ -846,19 +847,17 @@ class MyCli(object):
                 Document(text=text, cursor_position=cursor_positition), None)
 
     def get_prompt(self, string):
-	
-	now = datetime.now()
-	if dsn and '://' in dsn:
-	    string = string.replace('\\h', host or '(none)')
-	else:	
-	    sqlexecute = self.sqlexecute
-       	    host = self.login_path if self.login_path and self.login_path_as_host else sqlexecute.host
+        now = datetime.now()
+        if self.database and '://' in self.database:
+            string = string.replace('\\h', host or '(none)')
+        else:
+            sqlexecute = self.sqlexecute
+            host = self.login_path if self.login_path and self.login_path_as_host else sqlexecute.host
             string = string.replace('\\u', sqlexecute.user or '(none)')
             string = string.replace('\\h', host or '(none)')
             string = string.replace('\\d', sqlexecute.dbname or '(none)')
             string = string.replace('\\t', sqlexecute.server_type()[0] or 'mycli')
-	    string = string.replace('\\p', str(sqlexecute.port))
-
+            string = string.replace('\\p', str(sqlexecute.port))
         string = string.replace('\\n', "\n")
         string = string.replace('\\D', now.strftime('%a %b %d %H:%M:%S %Y'))
         string = string.replace('\\m', now.strftime('%M'))
@@ -1021,11 +1020,11 @@ def cli(database, user, host, port, socket, password, dbname,
         print('Version:', __version__)
         sys.exit(0)
 
-    mycli = MyCli(prompt=prompt, logfile=logfile,
+    mycli = MyCli(prompt_dsn=database, prompt=prompt, logfile=logfile,
                   defaults_suffix=defaults_group_suffix,
                   defaults_file=defaults_file, login_path=login_path,
                   auto_vertical_output=auto_vertical_output, warn=warn,
-                  myclirc=myclirc,dsn=database)
+                  myclirc=myclirc)
     if list_dsn:
         try:
             alias_dsn = mycli.config['alias_dsn']
