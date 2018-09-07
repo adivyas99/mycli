@@ -94,7 +94,7 @@ class MyCli(object):
     def __init__(self, sqlexecute=None, prompt=None,
             logfile=None, defaults_suffix=None, defaults_file=None,
             login_path=None, auto_vertical_output=False, warn=None,
-            myclirc="~/.myclirc"):
+            myclirc="~/.myclirc",dsn):
         self.sqlexecute = sqlexecute
         self.logfile = logfile
         self.defaults_suffix = defaults_suffix
@@ -846,13 +846,19 @@ class MyCli(object):
                 Document(text=text, cursor_position=cursor_positition), None)
 
     def get_prompt(self, string):
-        sqlexecute = self.sqlexecute
-        host = self.login_path if self.login_path and self.login_path_as_host else sqlexecute.host
-        now = datetime.now()
-        string = string.replace('\\u', sqlexecute.user or '(none)')
-        string = string.replace('\\h', host or '(none)')
-        string = string.replace('\\d', sqlexecute.dbname or '(none)')
-        string = string.replace('\\t', sqlexecute.server_type()[0] or 'mycli')
+	
+	now = datetime.now()
+	if dsn and '://' in dsn:
+	    string = string.replace('\\h', host or '(none)')
+	else:	
+	    sqlexecute = self.sqlexecute
+       	    host = self.login_path if self.login_path and self.login_path_as_host else sqlexecute.host
+            string = string.replace('\\u', sqlexecute.user or '(none)')
+            string = string.replace('\\h', host or '(none)')
+            string = string.replace('\\d', sqlexecute.dbname or '(none)')
+            string = string.replace('\\t', sqlexecute.server_type()[0] or 'mycli')
+	    string = string.replace('\\p', str(sqlexecute.port))
+
         string = string.replace('\\n', "\n")
         string = string.replace('\\D', now.strftime('%a %b %d %H:%M:%S %Y'))
         string = string.replace('\\m', now.strftime('%M'))
@@ -860,7 +866,6 @@ class MyCli(object):
         string = string.replace('\\R', now.strftime('%H'))
         string = string.replace('\\r', now.strftime('%I'))
         string = string.replace('\\s', now.strftime('%S'))
-        string = string.replace('\\p', str(sqlexecute.port))
         string = string.replace('\\_', ' ')
         return string
 
@@ -1020,7 +1025,7 @@ def cli(database, user, host, port, socket, password, dbname,
                   defaults_suffix=defaults_group_suffix,
                   defaults_file=defaults_file, login_path=login_path,
                   auto_vertical_output=auto_vertical_output, warn=warn,
-                  myclirc=myclirc)
+                  myclirc=myclirc,dsn=database)
     if list_dsn:
         try:
             alias_dsn = mycli.config['alias_dsn']
